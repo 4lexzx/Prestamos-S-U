@@ -7,15 +7,18 @@ y guarda los datos **en ese teléfono**, separados por usuario.
 Es la misma lógica de cálculo que el sistema de PC, así que los números
 (coinciden siempre): intereses, cronogramas, atrasos, capital.
 
-## 1. Publicarla (se hace una sola vez)
+## 1. Publicarla
 
-1. En el repositorio de GitHub: **Settings → Pages → Source: GitHub Actions**.
-2. Espera a que termine la pestaña **Actions** (el workflow
-   `Publicar la PWA en GitHub Pages`).
-3. La app queda en `https://4lexzx.github.io/Prestamos-S-U/`.
+La app se publica sola. El workflow `.github/workflows/pages.yml` sube esta
+carpeta (`docs/`) a **GitHub Pages** cada vez que se hace push a `main`.
 
-Cada vez que se sube algo a la rama `main`, GitHub Pages se vuelve a
-publicar automáticamente.
+- URL: **https://4lexzx.github.io/Prestamos-S-U/**
+- Configuración del repo (ya hecha): **Settings → Pages → Source: GitHub Actions**.
+- Estado de los despliegues: pestaña **Actions** del repositorio.
+
+Si la URL diera 404, entra a *Settings → Pages* y comprueba que la fuente
+esté en **GitHub Actions**; después vuelve a lanzar el workflow desde
+*Actions → Publicar la PWA en GitHub Pages → Run workflow*.
 
 ## 2. Instalarla en el teléfono
 
