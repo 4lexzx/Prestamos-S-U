@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es-PE">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="Gestión de préstamos en soles, 100% local.">
+  <title>Gestión de Préstamos</title>
+  <link rel="stylesheet" href="./estilos.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23166534'/><text x='50' y='68' font-size='52' text-anchor='middle' fill='white' font-family='Arial'>S</text></svg>">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <meta name="theme-color" content="#166534">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Prestamos">
+</head>
+<body>
+
+  <!-- ============ Pantalla de carga / error de conexión ============ -->
+  <div id="pantallaCarga" class="pantalla-carga">
+    <div class="caja-carga">
+      <div class="giro"></div>
+      <p id="textoCarga">Abriendo la aplicación…</p>
+    </div>
+  </div>
+
+  <!-- ============ Estructura de la aplicación ============ -->
+  <div id="app" class="app oculto">
+
+    <!-- Menú lateral (escritorio) / cajón (celular) -->
+    <aside class="lateral" id="lateral">
+      <div class="lateral-marca">
+        <span class="logo">S/</span>
+        <div>
+          <strong>Préstamos</strong>
+          <small id="nombreNegocio">Mi negocio</small>
+        </div>
+      </div>
+
+      <nav class="menu" id="menu">
+        <a href="#/dashboard"  data-vista="dashboard"><span class="ico" data-icono="panel"></span> Dashboard</a>
+        <a href="#/cobrar"     data-vista="cobrar"><span class="ico" data-icono="calendario"></span> A cobrar hoy</a>
+        <a href="#/prestamos"  data-vista="prestamos"><span class="ico" data-icono="nota"></span> Préstamos</a>
+        <a href="#/clientes"   data-vista="clientes"><span class="ico" data-icono="usuarios"></span> Clientes</a>
+        <a href="#/capital"    data-vista="capital"><span class="ico" data-icono="capital"></span> Capital</a>
+        <a href="#/ajustes"    data-vista="ajustes"><span class="ico" data-icono="ajustes"></span> Ajustes</a>
+      </nav>
+
+      <div class="lateral-pie">
+        <div class="mini-resumen" id="miniResumen"></div>
+        <button type="button" class="btn btn-nuevo" data-accion="nuevo-prestamo">+ Nuevo préstamo</button>
+        <button type="button" class="btn btn-claro btn-salir" data-accion="cambiar-usuario">Cambiar de usuario</button>
+        <small class="nota-local">100% local · sin internet</small>
+      </div>
+    </aside>
+
+    <!-- Zona principal -->
+    <div class="principal">
+      <header class="cabecera">
+        <button type="button" class="btn-icono solo-movil" id="btnMenu" aria-label="Abrir menú" data-icono="menu"></button>
+        <div class="cabecera-titulo">
+          <h1 id="tituloVista">Dashboard</h1>
+          <p id="subtituloVista"></p>
+        </div>
+        <div class="cabecera-acciones">
+          <span class="etiqueta-fecha" id="etiquetaFecha"></span>
+          <button type="button" class="btn btn-claro" data-accion="refrescar" title="Actualizar">⟳</button>
+        </div>
+      </header>
+
+      <main class="contenido" id="vista" tabindex="-1"></main>
+    </div>
+
+    <!-- Tapa oscura al abrir el menú en celular -->
+    <div class="tapa" id="tapa"></div>
+  </div>
+
+  <!-- ============ Pantalla de acceso: usuario y clave ============ -->
+  <div id="pantallaAcceso" class="pantalla-acceso oculto">
+    <div class="caja-acceso">
+      <div class="acceso-marca">
+        <span class="logo">S/</span>
+        <div>
+          <strong>Prestamos</strong>
+          <small>Privado, en este dispositivo</small>
+        </div>
+      </div>
+
+      <p class="acceso-nota" id="accesoNota"></p>
+
+      <form id="accesoForm" autocomplete="off" novalidate>
+        <div class="campo">
+          <label for="accesoUsuario">Usuario</label>
+          <input id="accesoUsuario" type="text" required minlength="2" maxlength="40"
+                 autocomplete="username" autocapitalize="none" spellcheck="false"
+                 list="accesoLista" placeholder="Tu nombre">
+          <datalist id="accesoLista"></datalist>
+        </div>
+
+        <div class="campo">
+          <label for="accesoClave">Clave</label>
+          <input id="accesoClave" type="password" required minlength="4" maxlength="100"
+                 autocomplete="current-password" placeholder="Tu clave secreta">
+        </div>
+
+        <div class="campo oculto" id="accesoRepetir">
+          <label for="accesoClave2">Repite la clave</label>
+          <input id="accesoClave2" type="password" minlength="4" maxlength="100"
+                 autocomplete="new-password" placeholder="Otra vez la misma clave">
+        </div>
+
+        <p class="acceso-etiqueta" id="accesoEtiqueta"></p>
+        <p class="acceso-error" id="accesoError" role="alert"></p>
+
+        <button class="btn btn-primario acceso-entrar" type="submit" id="accesoBoton">Entrar</button>
+      </form>
+
+      <p class="acceso-pie">Tu clave y tus datos no salen de este telefono.</p>
+    </div>
+  </div>
+
+  <!-- ============ Ventanas flotantes ============ -->
+  <div id="capaModales" class="capa-modales"></div>
+  <div id="avisos" class="avisos" aria-live="polite"></div>
+
+  <script>
+    // Se registra el service worker para que la app abra sin internet.
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+  </script>
+  <script type="module" src="./js/arranque.js"></script>
+</body>
+</html>
