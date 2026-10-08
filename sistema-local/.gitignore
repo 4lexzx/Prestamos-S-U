@@ -1,0 +1,6 @@
+# Los datos del usuario nunca se suben a internet ni al repositorio.
+datos/
+*.db
+*.db-shm
+*.db-wal
+node_modules/

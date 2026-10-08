@@ -1,0 +1,14 @@
+# Nunca se sube información de tus clientes.
+datos/
+**/datos/
+*.db
+*.db-shm
+*.db-wal
+*.csv
+
+node_modules/
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+desktop.ini

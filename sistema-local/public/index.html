@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es-PE">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="Gestión de préstamos en soles, 100% local.">
+  <title>Gestión de Préstamos</title>
+  <link rel="stylesheet" href="/estilos.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23166534'/><text x='50' y='68' font-size='52' text-anchor='middle' fill='white' font-family='Arial'>S</text></svg>">
+</head>
+<body>
+
+  <!-- ============ Pantalla de carga / error de conexión ============ -->
+  <div id="pantallaCarga" class="pantalla-carga">
+    <div class="caja-carga">
+      <div class="giro"></div>
+      <p id="textoCarga">Abriendo la aplicación…</p>
+    </div>
+  </div>
+
+  <!-- ============ Estructura de la aplicación ============ -->
+  <div id="app" class="app oculto">
+
+    <!-- Menú lateral (escritorio) / cajón (celular) -->
+    <aside class="lateral" id="lateral">
+      <div class="lateral-marca">
+        <span class="logo">S/</span>
+        <div>
+          <strong>Préstamos</strong>
+          <small id="nombreNegocio">Mi negocio</small>
+        </div>
+      </div>
+
+      <nav class="menu" id="menu">
+        <a href="#/dashboard"  data-vista="dashboard"><span class="ico" data-icono="panel"></span> Dashboard</a>
+        <a href="#/cobrar"     data-vista="cobrar"><span class="ico" data-icono="calendario"></span> A cobrar hoy</a>
+        <a href="#/prestamos"  data-vista="prestamos"><span class="ico" data-icono="nota"></span> Préstamos</a>
+        <a href="#/clientes"   data-vista="clientes"><span class="ico" data-icono="usuarios"></span> Clientes</a>
+        <a href="#/capital"    data-vista="capital"><span class="ico" data-icono="capital"></span> Capital</a>
+        <a href="#/ajustes"    data-vista="ajustes"><span class="ico" data-icono="ajustes"></span> Ajustes</a>
+      </nav>
+
+      <div class="lateral-pie">
+        <div class="mini-resumen" id="miniResumen"></div>
+        <button type="button" class="btn btn-nuevo" data-accion="nuevo-prestamo">+ Nuevo préstamo</button>
+        <small class="nota-local">100% local · sin internet</small>
+      </div>
+    </aside>
+
+    <!-- Zona principal -->
+    <div class="principal">
+      <header class="cabecera">
+        <button type="button" class="btn-icono solo-movil" id="btnMenu" aria-label="Abrir menú" data-icono="menu"></button>
+        <div class="cabecera-titulo">
+          <h1 id="tituloVista">Dashboard</h1>
+          <p id="subtituloVista"></p>
+        </div>
+        <div class="cabecera-acciones">
+          <span class="etiqueta-fecha" id="etiquetaFecha"></span>
+          <button type="button" class="btn btn-claro" data-accion="refrescar" title="Actualizar">⟳</button>
+        </div>
+      </header>
+
+      <main class="contenido" id="vista" tabindex="-1"></main>
+    </div>
+
+    <!-- Tapa oscura al abrir el menú en celular -->
+    <div class="tapa" id="tapa"></div>
+  </div>
+
+  <!-- ============ Ventanas flotantes ============ -->
+  <div id="capaModales" class="capa-modales"></div>
+  <div id="avisos" class="avisos" aria-live="polite"></div>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

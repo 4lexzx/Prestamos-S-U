@@ -1,0 +1,14 @@
+{
+  "name": "gestion-prestamos-local",
+  "version": "1.0.0",
+  "private": true,
+  "description": "App local de gestión de préstamos en soles. Datos en SQLite dentro de tu laptop.",
+  "type": "module",
+  "main": "servidor.js",
+  "scripts": {
+    "start": "node --no-warnings servidor.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  }
+}
