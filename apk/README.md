@@ -18,6 +18,44 @@ La app dentro del envoltorio es **exactamente la misma** que la de
 
 > `minSdkVersion` es 24: sirve para Android 7.0 (2016) en adelante.
 
+## Que se vea como app y no como página web
+
+Un APK de Bubblewrap es un envoltorio alrededor de la PWA publicada. Si
+Android **no logra verificar** que el dominio le pertenece, el envoltorio
+degrada a "página web embebida" y te deja **la barra del navegador encima**.
+
+Para evitarlo, el APK declara que `https://4lexzx.github.io` es suyo, y hace
+falta la prueba al revés: un archivo en la **raíz** del dominio que diga
+"sí, ese APK soy yo, con esta firma":
+
+```
+https://4lexzx.github.io/.well-known/assetlinks.json
+```
+
+Ese archivo vive en su propio repositorio,
+**[`4lexzx/4lexzx.github.io`](https://github.com/4lexzx/4lexzx.github.io)**,
+porque solo un repo con ese nombre sirve en la raíz del dominio. Un repo de
+proyecto (como este) se publica bajo `/Prestamos-S-U/` y no puede servirlo.
+
+### Si algún día se vuelve a firmar con otra clave
+
+El archivo incluye la huella SHA-256 del certificado. Cambia la clave y
+Android vuelve a no confiar, con el mismo síntoma (aparece la barra del
+navegador). Hay que actualizar la huella allí:
+
+```bash
+keytool -list -v -keystore clave-apk/android-keystore.keystore -alias android
+```
+
+### Síntoma y arreglo
+
+| Se ve la barra del navegador dentro de la app | Archivo no publicado o huella desactualizada |
+| Se ve a pantalla completa, sin barra | Todo en orden |
+
+Android cachea el resultado: tras arreglar el archivo hay que **desinstalar
+y reinstalar el APK** (o borrar sus datos desde Ajustes → Apps → Préstamos)
+para que vuelva a comprobarlo.
+
 ## Por qué los datos sobrevivan a desinstalar y reinstalar
 
 Android borra los datos de una app al desinstalarla. Para evitarlo, este APK
