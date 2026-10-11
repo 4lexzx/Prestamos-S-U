@@ -8,6 +8,27 @@ datos/
 
 node_modules/
 
+# Clave de firma del APK. NUNCA se sube: si se pierde, no se puede
+# actualizar la app ya instalada en los teléfonos. Guárdala aparte.
+clave-apk/
+*.keystore
+*.jks
+
+# Proyecto Android generado por Bubblewrap: se regenera con
+#   bubblewrap update --skipVersionUpgrade
+#   node scripts/aplicar-copia.mjs .
+# Solo se versionan el manifiesto fuente (twa-manifest.json), el script de
+# respaldo y las instrucciones.
+apk/*
+!apk/README.md
+!apk/scripts/
+!apk/twa-manifest.json
+
+# Salidas de la compilación
+*.apk
+*.aab
+*.idsig
+
 # Archivos del sistema
 .DS_Store
 Thumbs.db
