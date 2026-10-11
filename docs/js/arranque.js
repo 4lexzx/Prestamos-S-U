@@ -2,12 +2,14 @@
  * ============================================================================
  *  ARRANQUE.JS - Paso previo a la aplicacion
  * ============================================================================
- *  Este es el unico punto de entrada de la PWA. Antes de cargar la app
- *  hace tres cosas, en este orden:
+ *  Este es el unico punto de entrada de la PWA. Antes de cargar la app hace
+ *  dos cosas, en este orden:
  *
  *    1. Carga el motor SQLite compilado a WebAssembly (sql.js).
- *    2. Pide el usuario y la clave (o arranca con la sesion ya abierta).
- *    3. Abre la base de ese usuario desde el almacenamiento del telefono.
+ *    2. Abre la base de datos de este telefono.
+ *
+ *  No hay pantalla de acceso: la app se abre directa. Los datos viven dentro
+ *  del propio telefono (IndexedDB) y no salen de ahi.
  *
  *  Solo entonces carga app.js, que es practicamente el mismo archivo del
  *  sistema de PC: dibuja los iconos, pide el estado y pinta la primera
@@ -15,9 +17,9 @@
  * ============================================================================
  */
 
-import { cargarBase, instalarGuardadoDeSalida, guardarAhora } from './datos.js';
-import { abrirBaseDatos, cerrarBaseDatos, exportarBase, usuarioDeLaBase } from './negocio.js';
-import { pedirAcceso, cerrarSesion } from './auth.js';
+import { cargarBase, instalarGuardadoDeSalida } from './datos.js';
+import { abrirBaseDatos } from './negocio.js';
+import { usuarioActual } from './auth.js';
 
 /** Carga sql-wasm.js y lo deja disponible como window.SQL. */
 function cargarMotor() {
@@ -55,29 +57,17 @@ function mostrarError(mensaje) {
   caja.append(titulo, parrafo);
 }
 
-/** Salir de este usuario guardando todo, y volver a la pantalla de acceso. */
-async function cambiarDeUsuario() {
-  if (!confirm('Cambiar de usuario. Se guardan los cambios de este usuario.')) return;
-  try { await guardarAhora(); } catch { /* ya queda guardado al salir */ }
-  try { cerrarBaseDatos(); } catch { /* nada que cerrar */ }
-  cerrarSesion();
-  location.reload();
-}
-
 async function arrancar() {
-  document.addEventListener('click', (evento) => {
-    const boton = evento.target.closest('[data-accion]');
-    if (boton && boton.dataset.accion === 'cambiar-usuario') cambiarDeUsuario();
-  });
-
   const textoCarga = document.getElementById('textoCarga');
   try {
     if (textoCarga) textoCarga.textContent = 'Preparando el motor de datos...';
     await cargarMotor();
 
-    const usuario = await pedirAcceso();
+    // Un solo usuario por telefono. Si la app ya se usaba antes, se respeta
+    // el nombre que tenia: asi una actualizacion no deja los datos de lado.
+    const usuario = await usuarioActual();
 
-    if (textoCarga) textoCarga.textContent = `Abriendo los datos de ${usuario}...`;
+    if (textoCarga) textoCarga.textContent = 'Abriendo tus datos...';
     const bytes = await cargarBase(usuario);
     abrirBaseDatos(bytes, usuario);
     instalarGuardadoDeSalida();

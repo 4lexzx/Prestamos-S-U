@@ -201,9 +201,12 @@ export async function montarAjustes(contenedor) {
                 h('div', { class: 'dato-caja mono-num', style: 'font-size:12px;word-break:break-all' },
                   estado.baseDatos),
                 h('p', {}, 'Cada usuario tiene su base aparte, sin mezclarse con los demás.'),
+                h('p', {}, 'Nada se sube a internet. Si borras los datos del navegador se pierde todo, '
+                  + 'así que crea un respaldo de vez en cuando y descárgalo a tus archivos.'),
                 h('p', { style: 'margin-bottom:0' },
-                  'Nada se sube a internet. Si borras los datos del navegador se pierde todo, '
-                  + 'así que crea un respaldo de vez en cuando y descárgalo a tus archivos.')),
+                  'Si usas la aplicación instalada en el celular, Android guarda una copia automática en tu '
+                  + 'cuenta de Google y la devuelve al reinstalar. Para que eso funcione debe estar activada '
+                  + 'la copia de seguridad de Google en los ajustes del teléfono.')),
               pie: [h('button', {
                 class: 'btn btn-primario', type: 'button', onclick: () => document.querySelector('.modal-fondo')?.remove(),
               }, 'Entendido')],
@@ -246,7 +249,7 @@ export async function montarAjustes(contenedor) {
             estado.baseDatos)),
         h('div', { class: 'dato-caja' }, h('div', { class: 'et' }, 'Conexión'),
           h('div', { class: 'vl chico' }, 'Solo este dispositivo'),
-          h('div', { class: 'ayuda' }, 'Nunca se sube a internet')),
+          h('div', { class: 'ayuda' }, 'Nada se sube a internet')),
         h('div', { class: 'dato-caja' }, h('div', { class: 'et' }, 'Fecha del sistema'),
           h('div', { class: 'vl chico' }, formatearFecha(estado.hoy)))),
       h('div', { class: 'nota-info verde', style: 'margin-top:14px' },
