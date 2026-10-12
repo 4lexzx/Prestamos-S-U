@@ -101,7 +101,7 @@ async function pintar(contenedor) {
             h('td', { class: 'bloque' }, h('strong', {}, c.cliente)),
             h('td', { datosEtiqueta: 'Cuotas' }, `${c.cuotas}`),
             h('td', { datosEtiqueta: 'Debe', class: 'num negrita' }, formatearSoles(c.monto)),
-            h('td', {},
+            h('td', { datosEtiqueta: 'Acciones' },
               h('div', { style: 'display:flex;gap:6px;justify-content:flex-end' },
                 botonWhatsapp(c.telefono, mensajeSaldo({
                   nombreNegocio: app.ajustes.nombreNegocio,
@@ -203,7 +203,7 @@ function bloqueGrupo({ id, titulo, icono: nombreIcono, tono, lista, hoy, vacioTe
                 formatearSoles(item.capital)),
               h('td', { datosEtiqueta: 'Interés', class: 'num', style: 'color:var(--ambar)' },
                 formatearSoles(item.interes)),
-              h('td', {},
+              h('td', { datosEtiqueta: 'Acciones' },
                 h('div', { style: 'display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap' },
                   botonWhatsapp(item.telefono, mensajeRecordatorio({
                     nombreNegocio: app.ajustes.nombreNegocio,

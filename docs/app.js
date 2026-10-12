@@ -49,9 +49,11 @@ const elementoVista = () => document.getElementById('vista');
 function pintarEsqueleto(titulo, subtitulo, claveMenu) {
   document.getElementById('tituloVista').textContent = titulo;
   document.getElementById('subtituloVista').textContent = subtitulo || '';
-  for (const enlace of document.querySelectorAll('#menu a')) {
+  for (const enlace of document.querySelectorAll('#menu a, #tabbar a')) {
     enlace.classList.toggle('activo', enlace.dataset.vista === claveMenu);
   }
+  // En celular Ajustes vive en la cabecera, no en la barra inferior
+  document.getElementById('btnAjustes')?.classList.toggle('activo', claveMenu === 'ajustes');
   elementoVista().replaceChildren();
 }
 
@@ -62,10 +64,6 @@ async function pintarRuta() {
   const bruto = location.hash.replace(/^#\/?/, '');
   const partes = bruto.split('/').filter(Boolean);
   app.ruta = partes[0] || 'dashboard';
-
-  // Cierra el menú lateral en celular
-  document.getElementById('lateral').classList.remove('abierto');
-  document.getElementById('tapa').classList.remove('visible');
 
   let coincidencias = RUTAS.filter((ruta) => ruta.patron.length === partes.length
     && ruta.patron.every((pieza, i) => pieza === '#id' || pieza.toLowerCase() === (partes[i] || '').toLowerCase()));
@@ -193,18 +191,6 @@ function pintarCabeceraFija() {
   const hoy = new Date(`${app.hoy}T00:00:00`);
   document.getElementById('etiquetaFecha').textContent = hoy.toLocaleDateString('es-PE', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-  });
-
-  // Menú lateral en celular
-  const lateral = document.getElementById('lateral');
-  const tapa = document.getElementById('tapa');
-  document.getElementById('btnMenu').addEventListener('click', () => {
-    lateral.classList.toggle('abierto');
-    tapa.classList.toggle('visible');
-  });
-  tapa.addEventListener('click', () => {
-    lateral.classList.remove('abierto');
-    tapa.classList.remove('visible');
   });
 
   // Botones globales

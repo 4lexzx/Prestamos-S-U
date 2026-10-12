@@ -17,7 +17,7 @@
  * ============================================================================
  */
 
-const VERSION = 'v6';
+const VERSION = 'v7';
 const CACHE = `prestamos-su-${VERSION}`;
 
 const ARCHIVOS = [

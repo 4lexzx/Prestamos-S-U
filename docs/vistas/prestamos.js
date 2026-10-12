@@ -194,7 +194,7 @@ export async function montarPrestamos(contenedor, { diaSeleccionada = null } = {
           vencidas
             ? h('span', { class: 'etiqueta roja' }, `${vencidas} cuota(s)`)
             : h('span', { class: 'etiqueta verde' }, 'Al día')),
-        h('td', {},
+        h('td', { datosEtiqueta: 'Acciones' },
           h('div', { style: 'display:flex;gap:6px;justify-content:flex-end' },
             h('button', {
               class: 'btn btn-claro btn-pequeno', type: 'button',
@@ -349,7 +349,7 @@ export async function montarPrestamos(contenedor, { diaSeleccionada = null } = {
                 h('span', {
                   class: `etiqueta ${{ pagada: 'verde', vencida: 'roja', hoy: 'ambar', futura: 'azul' }[item.tono]}`,
                 }, { pagada: 'Pagada', vencida: 'Vencida', hoy: 'Vence hoy', futura: 'Programada' }[item.tono])),
-              h('td', {},
+              h('td', { datosEtiqueta: 'Acciones' },
                 h('div', { style: 'display:flex;gap:6px;justify-content:flex-end' },
                   h('button', {
                     class: 'btn btn-claro btn-pequeno', type: 'button',

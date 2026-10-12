@@ -272,7 +272,7 @@ async function pintar(contenedor, prestamo) {
             h('td', { datosEtiqueta: 'Monto', class: 'num negrita' }, formatearSoles(abono.monto)),
             h('td', { datosEtiqueta: 'Desde' }, `Cuota ${abono.cuota_inicio}`),
             h('td', { datosEtiqueta: 'Nota' }, abono.nota || '—'),
-            h('td', {},
+            h('td', { datosEtiqueta: 'Acciones' },
               h('button', {
                 class: 'btn btn-peligro btn-pequeno', type: 'button',
                 onclick: async () => {

@@ -57,7 +57,6 @@
     <!-- Zona principal -->
     <div class="principal">
       <header class="cabecera">
-        <button type="button" class="btn-icono solo-movil" id="btnMenu" aria-label="Abrir menú" data-icono="menu"></button>
         <div class="cabecera-titulo">
           <h1 id="tituloVista">Dashboard</h1>
           <p id="subtituloVista"></p>
@@ -65,14 +64,26 @@
         <div class="cabecera-acciones">
           <span class="etiqueta-fecha" id="etiquetaFecha"></span>
           <button type="button" class="btn btn-claro" data-accion="refrescar" title="Actualizar">⟳</button>
+          <a href="#/ajustes" class="btn-icono solo-movil cabecera-ajustes" id="btnAjustes"
+             title="Ajustes" aria-label="Ajustes"><span data-icono="ajustes"></span></a>
         </div>
       </header>
 
       <main class="contenido" id="vista" tabindex="-1"></main>
     </div>
 
-    <!-- Tapa oscura al abrir el menú en celular -->
-    <div class="tapa" id="tapa"></div>
+    <!-- Navegación inferior (solo celular): un toque a cualquier sección -->
+    <nav class="tabbar" id="tabbar" aria-label="Secciones">
+      <a href="#/dashboard" data-vista="dashboard"><span class="ico" data-icono="panel"></span><span class="etq">Panel</span></a>
+      <a href="#/cobrar"    data-vista="cobrar"><span class="ico" data-icono="calendario"></span><span class="etq">Cobrar</span></a>
+      <a href="#/prestamos" data-vista="prestamos"><span class="ico" data-icono="nota"></span><span class="etq">Préstamos</span></a>
+      <a href="#/clientes"  data-vista="clientes"><span class="ico" data-icono="usuarios"></span><span class="etq">Clientes</span></a>
+      <a href="#/capital"   data-vista="capital"><span class="ico" data-icono="capital"></span><span class="etq">Capital</span></a>
+    </nav>
+
+    <!-- Botón flotante: registrar un préstamo (solo celular) -->
+    <button type="button" class="fab" data-accion="nuevo-prestamo"
+            aria-label="Nuevo préstamo" title="Nuevo préstamo"><span data-icono="mas"></span></button>
   </div>
 
   <!-- ============ Ventanas flotantes ============ -->

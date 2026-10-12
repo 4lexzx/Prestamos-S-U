@@ -116,7 +116,7 @@ async function pintar(contenedor) {
                 m.tipo === 'inicial' ? 'Capital inicial' : 'Capital agregado')),
             h('td', { datosEtiqueta: 'Monto', class: 'num negrita' }, formatearSoles(m.monto)),
             h('td', { datosEtiqueta: 'Nota' }, m.nota || '—'),
-            h('td', {},
+            h('td', { datosEtiqueta: 'Acciones' },
               h('button', {
                 class: 'btn btn-peligro btn-pequeno', type: 'button',
                 onclick: async () => {
@@ -168,7 +168,7 @@ async function pintar(contenedor) {
             h('td', { datosEtiqueta: 'Capital pendiente', class: 'num negrita', style: 'color:var(--verde)' },
               formatearSoles(c.capitalPendiente)),
             h('td', { datosEtiqueta: 'Total por cobrar', class: 'num' }, formatearSoles(c.porCobrar)),
-            h('td', {},
+            h('td', { datosEtiqueta: 'Acciones' },
               h('div', { style: 'display:flex;gap:6px;justify-content:flex-end' },
                 c.cuotasVencidas
                   ? h('span', { class: 'etiqueta roja' }, `${c.cuotasVencidas} vencida(s)`)

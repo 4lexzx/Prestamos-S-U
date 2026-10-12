@@ -29,6 +29,22 @@ Abre la URL en Chrome (Android) o Safari (iPhone):
 
 Queda un icono propio y se abre a pantalla completa, como cualquier app.
 
+### Cómo se mueve en el teléfono
+
+En pantallas de celular la navegación vive **abajo, al alcance del pulgar**:
+
+- **Barra inferior** con 5 secciones: Panel, Cobrar, Préstamos, Clientes y
+  Capital. Un toque y cambias de sección; la pestaña activa se pone verde.
+- **Ajustes** está en el engranaje de la esquina superior derecha.
+- **Botón flotante verde (+)** abajo a la derecha: registra un préstamo desde
+  cualquier pantalla sin tener que buscar en el menú.
+- Las tablas se convierten en **tarjetas**: el cliente va de encabezado, los
+  datos en pares etiqueta/valor y los botones al pie, todos del ancho completo
+  y con 44 px de alto para tocar sin fallar.
+
+En la computadora (pantalla ancha) el diseño es el de siempre: barra lateral
+con el menú y las tablas en su formato de columnas.
+
 ## 3. Sin login
 
 **No hay pantalla de acceso.** La app se abre directa al dashboard: en este
