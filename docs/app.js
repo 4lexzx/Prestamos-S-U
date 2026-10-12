@@ -102,6 +102,10 @@ function revelar(contenedor, animar) {
     el.classList.add('por-revelar');
     observadorRevelado.observe(el);
   });
+
+  // De paso enseñamos lo que ya cabe en pantalla: así no dependemos de que el
+  // navegador avise en el primer instante.
+  alDesplazar();
 }
 
 /** Limpia el observador para que no apunte a nodos ya borrados. */
