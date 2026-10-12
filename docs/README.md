@@ -47,11 +47,44 @@ En pantallas de celular la navegación vive **abajo, al alcance del pulgar**:
   nombre y el saldo, y el resto (ubicación, cuotas, atraso y los botones)
   aparece al tocar la fila. Un toque más y se vuelve a plegar. Así se pasa
   de un cliente a otro sin tener que hacer scroll.
+- El resto es **más tranquilo**: colores neutros con verde y rojo solo donde
+  importa (a favor, en contra), tarjetas y tablas con menos aire y bloques que
+  **entran con un fundido suave** a medida que bajas. Si el teléfono tiene
+  activado "reducir movimiento", las animaciones se apagan solas.
 
 En la computadora (pantalla ancha) el diseño es el de siempre: barra lateral
 con el menú y las tablas en su formato de columnas.
 
-## 3. Sin login
+## 3. Avisos de cobro
+
+La app te recuerda los cobros **dos veces**: **un día antes** y **el mismo
+día**, a primera hora (**07:30**).
+
+- **Aviso del sistema**: aparece en la barra de notificaciones del teléfono,
+  con lo que cobras, cuánto hay atrasado y qué toca mañana.
+- Si la app está abierta, además suena **un pitido suave**.
+- En el **Panel** hay una tarjeta con el resumen (Atrasadas / Hoy / Mañana) y
+  un botón **Ir a cobrar**.
+- En **Ajustes → Sonidos y avisos** se activan o se apagan, y ahí mismo se
+  concede el permiso del navegador (haz falta una sola vez).
+
+Los avisos salen **una sola vez por día**, aunque abras la app varias veces.
+
+### Sonidos
+
+- **Pitido al cobrar** una cuota y **al registrar un préstamo** (en
+  *Ajustes → Sonidos y avisos* se apaga; hay botón de prueba).
+- Se generan con el propio navegador, no hay archivos de audio que descargar
+  ni que ocupen espacio.
+- Si el teléfono está en silencio, no suena: es el propio celular quien manda.
+
+> **Sobre los avisos automáticos:** la web no puede programar notificaciones
+> para dentro de unas horas sin un servidor detrás, y esta app no tiene
+> servidor. Por eso el aviso se lanza en cuanto abres la app, cada vez que
+> vuelves a ella, y cada tanto si el navegador lo permite. Mientras la
+> aplicación esté instalada o abierta, no te lo pierdes.
+
+## 4. Sin login
 
 **No hay pantalla de acceso.** La app se abre directa al dashboard: en este
 teléfono solo hay una persona usándola, así que no hace falta candado.
@@ -65,7 +98,7 @@ teléfono solo hay una persona usándola, así que no hace falta candado.
 - Quien coja el teléfono ve los datos. Si eso te preocupa, el candado de
   bloqueo del propio celular es la barrera.
 
-## 4. Dónde están los datos
+## 5. Dónde están los datos
 
 Todo vive en el **almacenamiento del navegador** (IndexedDB) de ese dispositivo:
 
@@ -90,7 +123,7 @@ Para que funcione se necesitan dos cosas en el teléfono:
 > instalado, puede que todavía no se haya copiado. Por eso **sigue siendo
 > buena idea descargar un respaldo desde Ajustes** de vez en cuando.
 
-## 5. Llevar los datos desde la computadora
+## 6. Llevar los datos desde la computadora
 
 Pantalla **Ajustes → Llevar mis datos a otro equipo**:
 
@@ -102,7 +135,7 @@ Pantalla **Ajustes → Llevar mis datos a otro equipo**:
 También puedes importar un **respaldo JSON** exportado desde el propio teléfono
 (eso sirve para restaurar o para copiar los datos a otro dispositivo).
 
-## 6. Copias de seguridad y Excel
+## 7. Copias de seguridad y Excel
 
 En **Ajustes** tienes:
 
@@ -111,7 +144,7 @@ En **Ajustes** tienes:
 - **Respaldos**: copias de la base completa dentro del teléfono.
 - **Descargar mis datos (JSON)**: archivo portable para llevártelo a otro equipo.
 
-## 7. Cómo está hecha
+## 8. Cómo está hecha
 
 | Archivo | Función |
 |---|---|
@@ -122,8 +155,10 @@ En **Ajustes** tienes:
 | `js/sqlite.js` | SQLite compilado a WebAssembly (sql.js) con la misma API que `node:sqlite` |
 | `js/negocio.js` + `js/rutas.js` | La lógica y las rutas del servidor, ejecutándose en el navegador |
 | `js/migra.js` | Importar `.db` / respaldos JSON |
+| `js/sonidos.js` | Pitidos de cobro y de préstamo (sonido generado en el navegador) |
+| `js/recordatorios.js` | Avisos de cobro: resumen, permiso, programación y aviso del sistema |
 | `api.js` | Fachada: mismas llamadas que el servidor, resueltas en local |
-| `sw.js` | Service worker: precaché de 31 archivos y modo sin conexión |
+| `sw.js` | Service worker: precaché de 33 archivos, modo sin conexión y avisos en segundo plano |
 | `manifest.webmanifest` + `iconos/` | Instalación como app e iconos |
 
 La lógica de negocio está **copiada literalmente** desde el servidor

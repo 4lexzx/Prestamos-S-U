@@ -17,8 +17,11 @@
  * ============================================================================
  */
 
-const VERSION = 'v9';
+const VERSION = 'v10';
 const CACHE = `prestamos-su-${VERSION}`;
+
+/** Caché aparte donde la app deja escrita la lista de cobros pendientes. */
+const CACHE_RECORDATORIOS = 'prestamos-recordatorios';
 
 const ARCHIVOS = [
   './',
@@ -35,6 +38,8 @@ const ARCHIVOS = [
   './js/migra.js',
   './js/negocio.js',
   './js/rutas.js',
+  './js/sonidos.js',
+  './js/recordatorios.js',
   './js/sqlite.js',
   './compartido/calculo.js',
   './compartido/moneda.js',
@@ -82,6 +87,83 @@ self.addEventListener('activate', (evento) => {
 
 self.addEventListener('message', (evento) => {
   if (evento.data === 'actualizar-cache') self.skipWaiting();
+});
+
+/* ==========================================================================
+   RECORDATORIOS DE COBRO EN SEGUNDO PLANO
+   La app deja escrita en la caché la lista de cuotas que tocan hoy y mañana.
+   Aquí, cuando el navegador nos deja trabajar sin abrir la app, comprobamos
+   si toca avisar y lanzamos la notificación (una sola vez por día).
+   ========================================================================== */
+
+const isoLocal = (fecha) => `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`;
+
+const dinero = (valor) => `S/ ${(Number(valor) || 0).toLocaleString('es-PE', {
+  minimumFractionDigits: 2, maximumFractionDigits: 2,
+})}`;
+
+async function avisarDeLosCobros() {
+  try {
+    const cache = await caches.open(CACHE_RECORDATORIOS);
+    const guardado = await cache.match('/__recordatorios__/pendientes');
+    if (!guardado) return;
+
+    const datos = await guardado.json();
+    const hoy = isoLocal(new Date());
+    const manana = isoLocal(new Date(Date.now() + 86400000));
+    const pendientes = (datos.pendientes || []).filter((p) => p.fecha === hoy || p.fecha === manana);
+    if (!pendientes.length) return;
+
+    // Una sola vez por día
+    const marca = await cache.match('/__recordatorios__/ultimo-aviso');
+    if (marca && (await marca.text()) === hoy) return;
+
+    const deHoy = pendientes.filter((p) => p.fecha === hoy);
+    const deManana = pendientes.filter((p) => p.fecha === manana);
+    const suma = (lista) => lista.reduce((t, p) => t + (Number(p.monto) || 0), 0);
+
+    const lineas = [];
+    if (deHoy.length) lineas.push(`Hoy: ${deHoy.length} cuota(s) · ${dinero(suma(deHoy))}`);
+    if (deManana.length) lineas.push(`Mañana: ${deManana.length} cuota(s) · ${dinero(suma(deManana))}`);
+
+    const titulo = deHoy.length
+      ? `Cobras hoy ${dinero(suma(deHoy))}`
+      : `Mañana cobras ${dinero(suma(deManana))}`;
+
+    await self.registration.showNotification(titulo, {
+      body: lineas.join('\n'),
+      tag: `recordatorio-${hoy}`,
+      icon: './iconos/icono-192.png',
+      badge: './iconos/icono-192.png',
+      silent: true,
+      data: { ruta: '#/cobrar' },
+    });
+
+    await cache.put('/__recordatorios__/ultimo-aviso', new Response(hoy));
+  } catch { /* sin datos o sin permiso: no pasa nada */ }
+}
+
+self.addEventListener('periodicsync', (evento) => {
+  if (evento.tag !== 'recordatorios') return;
+  evento.waitUntil(avisarDeLosCobros());
+});
+
+/* Al tocar la notificación: abrir o recuperar la app y ir a la pantalla de cobrar. */
+self.addEventListener('notificationclick', (evento) => {
+  const destino = (evento.notification.data && evento.notification.data.ruta) || '#/cobrar';
+  evento.notification.close();
+  evento.waitUntil((async () => {
+    try {
+      const abiertas = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      for (const cliente of abiertas) {
+        if (!('focus' in cliente)) continue;
+        await cliente.focus();
+        if ('postMessage' in cliente) cliente.postMessage({ ir: destino });
+        return;
+      }
+      if (self.clients.openWindow) await self.clients.openWindow(`./${destino}`);
+    } catch { /* el sistema bloquea abrir ventanas */ }
+  })());
 });
 
 self.addEventListener('fetch', (evento) => {

@@ -18,6 +18,30 @@ import { formatearFecha } from '../compartido/calculo.js';
 import {
   importarArchivoDb, importarRespaldoJson, descargarRespaldo,
 } from '../js/migra.js';
+import {
+  sonidosActivados, ponerSonidos, reproducir,
+  avisosDeRecordatorioActivados, ponerAvisosDeRecordatorio,
+} from '../js/sonidos.js';
+import {
+  hayNotificaciones, permisoConcedido, pedirPermiso, revisar, HORA_AVISO, MINUTO_AVISO,
+} from '../js/recordatorios.js';
+
+/** Interruptor de dos posiciones: Sí / No. */
+function interruptor(inicial, alCambiar) {
+  const caja = h('div', { class: 'interruptor' });
+  const botones = new Map();
+  const pintar = (valor) => {
+    for (const [v, b] of botones) b.classList.toggle('activo', v === valor);
+  };
+  for (const [texto, valor] of [['Sí', true], ['No', false]]) {
+    const b = h('button', { type: 'button' }, texto);
+    b.addEventListener('click', () => { pintar(valor); alCambiar(valor); });
+    botones.set(valor, b);
+    caja.append(b);
+  }
+  pintar(inicial);
+  return caja;
+}
 
 export async function montarAjustes(contenedor) {
   const [ajustes, respaldos, estado] = await Promise.all([
@@ -124,6 +148,78 @@ export async function montarAjustes(contenedor) {
         h('label', {}, 'Nombre de tu negocio (aparece en los mensajes de WhatsApp)'),
         h('input', { type: 'text', id: 'nombreNegocio', value: ajustes.negocio || '' })),
       botonNombre));
+
+  /* ---------------- Sonidos y avisos ---------------- */
+
+  const horaAviso = `${String(HORA_AVISO).padStart(2, '0')}:${String(MINUTO_AVISO).padStart(2, '0')}`;
+
+  const estadoPermiso = h('div', { class: 'ayuda' });
+  const botonPermiso = h('button', { class: 'btn btn-primario', type: 'button' },
+    'Activar avisos del sistema');
+
+  function pintarPermiso() {
+    if (!hayNotificaciones()) {
+      estadoPermiso.textContent = 'Este navegador no admite avisos del sistema.';
+      botonPermiso.classList.add('oculto');
+      return;
+    }
+    const p = Notification.permission;
+    botonPermiso.classList.toggle('oculto', p !== 'default');
+    estadoPermiso.textContent = p === 'granted'
+      ? 'Avisos del sistema: activados. Funcionan mientras la app esté abierta o el teléfono permita avisos en segundo plano.'
+      : p === 'denied'
+        ? 'Avisos del sistema: bloqueados. Se desbloquean en los ajustes del navegador (icono de candado junto a la dirección).'
+        : 'Avisos del sistema: todavía no activados.';
+  }
+
+  botonPermiso.addEventListener('click', async () => {
+    botonPermiso.disabled = true;
+    const resultado = await pedirPermiso();
+    botonPermiso.disabled = false;
+    pintarPermiso();
+    if (resultado === 'granted') {
+      avisar('Avisos activados.', 'exito');
+      revisar();
+    } else if (resultado === 'denied') {
+      avisar('El navegador bloqueó los avisos.', 'error');
+    }
+  });
+
+  pintarPermiso();
+
+  const tarjetaAvisos = h('div', { class: 'tarjeta' },
+    h('div', { class: 'tarjeta-cabecera' },
+      h('h2', {}, h('span', { class: 'con-icono' }, icono('alerta'), 'Sonidos y avisos')),
+      h('span', { class: 'crece' }),
+      h('span', { class: 'etiqueta verde' }, `Avisos a las ${horaAviso}`)),
+    h('div', { class: 'tarjeta-cuerpo' },
+      h('div', { class: 'nota-info' },
+        `Te recordamos un día antes y el mismo día de cada cobro, a primera hora (${horaAviso}). `
+        + 'Aparece una notificación del teléfono y, si la app está abierta, también un pitido suave.'),
+
+      h('div', { class: 'campo' },
+        h('label', {}, 'Pitido al cobrar o crear un préstamo'),
+        h('div', { style: 'display:flex;align-items:center;gap:10px;flex-wrap:wrap' },
+          interruptor(sonidosActivados(), (valor) => {
+            ponerSonidos(valor);
+            avisar(valor ? 'Sonidos activados.' : 'Sonidos desactivados.', 'info');
+          }),
+          h('button', {
+            class: 'btn btn-claro btn-pequeno', type: 'button',
+            onclick: () => reproducir('prueba', { forzar: true }),
+          }, 'Probar el sonido'))),
+
+      h('div', { class: 'campo' },
+        h('label', {}, 'Notificaciones de recordatorio'),
+        interruptor(avisosDeRecordatorioActivados(), (valor) => {
+          ponerAvisosDeRecordatorio(valor);
+          avisar(valor ? 'Recordatorios activados.' : 'Recordatorios desactivados.', 'info');
+        })),
+
+      h('div', { class: 'campo' },
+        h('label', {}, 'Permiso del teléfono'),
+        estadoPermiso,
+        h('div', { style: 'display:flex;gap:8px;margin-top:8px;flex-wrap:wrap' }, botonPermiso))));
 
   /* ---------------- Respaldo ---------------- */
 
@@ -327,7 +423,7 @@ export async function montarAjustes(contenedor) {
       inputDb, inputJson));
 
   contenedor.replaceChildren(
-    tarjetaInteres, tarjetaRespaldo, tarjetaExportar, tarjetaMigrar, tarjetaInfo,
+    tarjetaAvisos, tarjetaInteres, tarjetaRespaldo, tarjetaExportar, tarjetaMigrar, tarjetaInfo,
     h('div', { style: 'height:30px' }),
   );
 }

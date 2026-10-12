@@ -18,8 +18,17 @@ export const app = {
 
 const suscriptores = new Set();
 
-/** Registra una función que se ejecutará tras cada cambio en los datos. */
+/**
+ * Registra una función que se ejecutará tras cada cambio en los datos.
+ *
+ * Solo puede haber UNA por pantalla: la anterior se da de baja sola. Sin
+ * esto, cada refresco volvía a dar de alta otra copia y a la décima vez de
+ * pagar una cuota la app se re-pintaba mil veces lo mismo.
+ *
+ * @returns {() => void} función para darse de baja a mano
+ */
 export function suscribir(funcion) {
+  suscriptores.clear();
   suscriptores.add(funcion);
   return () => suscriptores.delete(funcion);
 }

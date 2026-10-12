@@ -8,6 +8,9 @@
 import { api } from './api.js';
 import { app, ir, limpiarSuscriptores, refrescar, suscribir } from './estado.js';
 import { avisar, h, icono } from './ui.js';
+import {
+  arrancarRecordatorios, revisar as revisarRecordatorios,
+} from './js/recordatorios.js';
 
 import { montarDashboard } from './vistas/dashboard.js';
 import { montarCobrar } from './vistas/cobrar.js';
@@ -45,6 +48,76 @@ const SECCION_POR_VISTA = {
 
 const elementoVista = () => document.getElementById('vista');
 
+/* ========================================================================== *
+ *  REVELADO AL HACER SCROLL
+ *  Los bloques entran con un fundido cada vez que llegan a la pantalla.
+ *  Solo anima al cambiar de sección: cuando se refrescan los datos no se
+ *  mueve nada, para que no salte todo el rato mientras cobras.
+ * ========================================================================== */
+
+let observadorRevelado = null;
+
+function objetivosDeRevelado(contenedor) {
+  const lista = [];
+  for (const hijo of contenedor.children) {
+    // Un envoltorio que no es más que una pila de tarjetas: animamos las
+    // tarjetas una a una en vez de la caja, para que se vean entrar por orden.
+    const internos = [...hijo.children];
+    if (internos.length > 1 && internos.every((x) => x.classList.contains('tarjeta'))) {
+      lista.push(...internos);
+    } else {
+      lista.push(hijo);
+    }
+  }
+  return lista;
+}
+
+function revelar(contenedor, animar) {
+  if (!animar) return;
+  const objetivos = objetivosDeRevelado(contenedor);
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (reduce || !('IntersectionObserver' in window)) {
+    for (const el of objetivos) el.classList.add('revelado');
+    return;
+  }
+
+  if (!observadorRevelado) {
+    observadorRevelado = new IntersectionObserver((entradas) => {
+      for (const entrada of entradas) {
+        if (!entrada.isIntersecting) continue;
+        entrada.target.classList.add('revelado');
+        observadorRevelado.unobserve(entrada.target);
+      }
+    }, { rootMargin: '0px 0px -30px 0px', threshold: 0.04 });
+  }
+
+  objetivos.forEach((el, i) => {
+    if (el.classList.contains('revelado')) return;
+    el.style.setProperty('--orden', String(Math.min(i, 8)));
+    el.classList.add('por-revelar');
+    observadorRevelado.observe(el);
+  });
+}
+
+/** Limpia el observador para que no apunte a nodos ya borrados. */
+function olvidarRevelado() {
+  if (observadorRevelado) observadorRevelado.disconnect();
+  observadorRevelado = null;
+}
+
+/* Sombra en la cabecera cuando el contenido se desliza por debajo. */
+let sombraCabecera = null;
+
+function actualizarSombraCabecera() {
+  const sombreada = window.scrollY > 6;
+  if (sombreada === sombraCabecera) return;
+  sombraCabecera = sombreada;
+  document.querySelector('.cabecera')?.classList.toggle('desplazada', sombreada);
+}
+
+window.addEventListener('scroll', actualizarSombraCabecera, { passive: true });
+
 /** Limpia la pantalla y marca el enlace del menú que está activo. */
 function pintarEsqueleto(titulo, subtitulo, claveMenu) {
   document.getElementById('tituloVista').textContent = titulo;
@@ -54,13 +127,18 @@ function pintarEsqueleto(titulo, subtitulo, claveMenu) {
   }
   // En celular Ajustes vive en la cabecera, no en la barra inferior
   document.getElementById('btnAjustes')?.classList.toggle('activo', claveMenu === 'ajustes');
+  olvidarRevelado();
   elementoVista().replaceChildren();
 }
 
 let pintarPantallaActual = () => {};
 
-/** Dibuja la pantalla que corresponde a la dirección del navegador. */
-async function pintarRuta() {
+/**
+ * Dibuja la pantalla que corresponde a la dirección del navegador.
+ * @param {object} [op]  { animar:false } cuando es un refresco de datos,
+ *                       para que no se vuelvan a mover los bloques.
+ */
+async function pintarRuta(op = {}) {
   const bruto = location.hash.replace(/^#\/?/, '');
   const partes = bruto.split('/').filter(Boolean);
   app.ruta = partes[0] || 'dashboard';
@@ -95,13 +173,14 @@ async function pintarRuta() {
   }
 
   elementoVista().classList.remove('carga-suave');
+  revelar(elementoVista(), op.animar !== false);
   elementoVista().scrollIntoView({ block: 'start' });
 }
 
 /** Re-dibuja la pantalla actual (usado tras cada cambio de datos). */
 function reprogramar() {
   clearTimeout(pintarPantallaActual);
-  pintarPantallaActual = setTimeout(() => pintarRuta(), 40);
+  pintarPantallaActual = setTimeout(() => pintarRuta({ animar: false }), 40);
 }
 
 function hError(mensaje, reintentar) {
@@ -155,9 +234,19 @@ async function iniciar() {
 
   pintarCabeceraFija();
 
-  window.addEventListener('hashchange', pintarRuta);
+  window.addEventListener('hashchange', () => pintarRuta());
+
+  // El service worker puede abrir la app desde una notificación de recordatorio
+  navigator.serviceWorker?.addEventListener('message', (evento) => {
+    const destino = evento.data && evento.data.ir;
+    if (destino) { ir(destino); revisarRecordatorios(); }
+  });
+
   suscribir(refrescarTodoEnPantalla);
   await pintarRuta();
+
+  // Avisos de cobro: el día antes y el mismo día, a primera hora
+  arrancarRecordatorios();
 }
 
 /**
@@ -214,7 +303,7 @@ function pintarCabeceraFija() {
     }
     if (accion === 'refrescar') {
       boton.disabled = true;
-      try { await pintarRuta(); await actualizarMiniResumen(); avisar('Datos actualizados.', 'info'); }
+      try { await pintarRuta({ animar: false }); await actualizarMiniResumen(); avisar('Datos actualizados.', 'info'); }
       finally { boton.disabled = false; }
     }
   });

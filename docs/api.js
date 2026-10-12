@@ -16,8 +16,20 @@
 import { manejar } from './js/rutas.js';
 import { programarGuardado } from './js/datos.js';
 import { exportarBase, usuarioDeLaBase } from './js/negocio.js';
+import { sonarCobro, sonarPrestamo } from './js/sonidos.js';
 
 const METODOS_DE_ESCRITURA = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+
+/**
+ * Un pitido de confirmación cuando ocurre algo que al usuario le interesa:
+ * cobrar una cuota, meter un abono o dar de alta un préstamo.
+ * Como aquí pasan TODAS las llamadas, no hace falta tocar cada pantalla.
+ */
+function sonarSegunLaOperacion(ruta, metodo) {
+  if (metodo !== 'POST') return;
+  if (/\/cuotas\/\d+\/pagar$/.test(ruta) || /\/abonos$/.test(ruta)) sonarCobro();
+  else if (/^\/api\/prestamos$/.test(ruta)) sonarPrestamo();
+}
 
 async function pedir(ruta, opciones = {}) {
   const metodo = (opciones.method || 'GET').toUpperCase();
@@ -32,6 +44,7 @@ async function pedir(ruta, opciones = {}) {
   // Escritura exitosa (o de negocio) -> la base cambio, hay que guardarla.
   if (METODOS_DE_ESCRITURA.has(metodo) && respuesta && respuesta.status < 400) {
     programarGuardado(exportarBase, usuarioDeLaBase());
+    sonarSegunLaOperacion(ruta, metodo);
   }
 
   if (!respuesta || typeof respuesta !== 'object') {
