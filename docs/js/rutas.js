@@ -142,14 +142,23 @@ export async function manejar(ruta, metodoHTTP, cuerpo) {
   if (recurso === 'capital' && metodo === 'GET') return responderJSON(null, 200, construirResumenCapital());
 
   if (recurso === 'capital' && metodo === 'POST') {
+    const esRetiro = cuerpo.tipo === 'retiro';
     const montoC = aCentimos(cuerpo.monto);
     if (montoC <= 0) throw new Error('El monto debe ser mayor a S/ 0.00.');
+    // Un retiro se guarda con monto NEGATIVO: así el total y el CSV siguen cuadrando.
+    // Solo se bloquea si te pasas del capital total (nunca del disponible en la calle).
+    if (esRetiro) {
+      const totalC = aCentimos(db.prepare('SELECT COALESCE(SUM(monto), 0) AS t FROM capital_movs').get().t);
+      if (montoC > totalC) {
+        throw new Error(`No puedes retirar más de tu capital total (${aSoles(totalC).toFixed(2)}).`);
+      }
+    }
     const vacio = db.prepare('SELECT COUNT(*) AS n FROM capital_movs').get().n === 0;
     const info = db.prepare(`
       INSERT INTO capital_movs (tipo, monto, fecha, nota, creado_en) VALUES (?, ?, ?, ?, ?)
     `).run(
-      vacio ? 'inicial' : (cuerpo.tipo === 'inicial' ? 'inicial' : 'extra'),
-      aSoles(montoC),
+      esRetiro ? 'retiro' : vacio ? 'inicial' : (cuerpo.tipo === 'inicial' ? 'inicial' : 'extra'),
+      esRetiro ? aSoles(-montoC) : aSoles(montoC),
       /^\d{4}-\d{2}-\d{2}$/.test(String(cuerpo.fecha || '')) ? cuerpo.fecha : hoyISO(),
       String(cuerpo.nota || '').trim(), new Date().toISOString(),
     );

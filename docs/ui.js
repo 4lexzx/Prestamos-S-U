@@ -39,6 +39,18 @@ export function h(etiqueta, atributos = {}, ...hijos) {
   return el;
 }
 
+/**
+ * Pinta un contenedor descartando null/undefined/false ANTES de llamar a
+ * replaceChildren: ese método convierte cualquier null en el literal "null"
+ * y se ve escrito en pantalla. h() ya filtra, pero replaceChildren no.
+ *   pintarEn(caja, tarjeta1, condicion ? tarjeta2 : null, 'texto')
+ */
+export function pintarEn(contenedor, ...items) {
+  const limpios = items.flat().filter((x) => x !== null && x !== undefined && x !== false);
+  contenedor.replaceChildren(...limpios);
+  return contenedor;
+}
+
 /** Escapa texto para usarlo dentro de innerHTML. */
 export function escapar(texto) {
   return String(texto ?? '').replace(/[&<>"']/g, (c) => ({
@@ -77,6 +89,7 @@ const TRAZOS = {
   mas: 'M12 5v14M5 12h14',
   filtrar: 'M3 5h18l-7 8v6l-4 2v-8L3 5Z',
   nota: 'M6 3h9l4 4v14H6V3Zm9 0v4h4M9 12h6M9 16h6',
+  campana: 'M6 9a6 6 0 0 1 12 0c0 6 2 6 2 8H4c0-2 2-2 2-8M10.3 20a2 2 0 0 0 3.4 0',
 };
 
 /**

@@ -12,7 +12,7 @@ import { api } from '../api.js';
 import { app, ir, refrescar } from '../estado.js';
 import {
 h, vacio, iniciales, formatearSoles, barraProgreso,
-    botonWhatsapp, mensajeSaldo, icono,
+    botonWhatsapp, mensajeSaldo, icono, pintarEn,
   } from '../ui.js';
 import { formatearFecha, hoyISO } from '../compartido/calculo.js';
 import { abrirFormularioCliente } from '../vistas/clientes.js';
@@ -121,7 +121,8 @@ export async function montarCliente(contenedor, { id }) {
     )))
     : null;
 
-  contenedor.replaceChildren(
+  pintarEn(
+    contenedor,
     acciones,
     ficha,
     listaPrestamos('Préstamos activos', activos),

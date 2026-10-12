@@ -17,7 +17,7 @@
  * ============================================================================
  */
 
-const VERSION = 'v10';
+const VERSION = 'v11';
 const CACHE = `prestamos-su-${VERSION}`;
 
 /** Caché aparte donde la app deja escrita la lista de cobros pendientes. */
@@ -45,6 +45,7 @@ const ARCHIVOS = [
   './compartido/moneda.js',
   './modales/prestamo-form.js',
   './vistas/ajustes.js',
+  './vistas/bandeja.js',
   './vistas/capital.js',
   './vistas/cliente.js',
   './vistas/clientes.js',

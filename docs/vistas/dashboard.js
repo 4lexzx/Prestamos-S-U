@@ -12,9 +12,6 @@ import { api } from '../api.js';
 import { app, ir, refrescar, suscribir } from '../estado.js';
 import { h, formatearSoles, botonWhatsapp, mensajeRecordatorio, avisar, icono } from '../ui.js';
 import { formatearFecha, diasEntre } from '../compartido/calculo.js';
-import {
-  resumir, faltaPedirPermiso, pedirPermiso, permisoConcedido, revisar, HORA_AVISO, MINUTO_AVISO,
-} from '../js/recordatorios.js';
 
 const COLOR_CAPITAL = '#16a34a';
 const COLOR_INTERES = '#94a3b8';
@@ -24,11 +21,7 @@ export async function montarDashboard(contenedor) {
   const t = datos.tarjetas;
   const dinero = (valor) => formatearSoles(valor);
 
-  const recordatorio = tarjetaRecordatorio(datos, () => montarDashboard(contenedor));
-
   contenedor.replaceChildren(
-    ...(recordatorio ? [recordatorio] : []),
-
     h('div', { class: 'acciones' },
       h('button', {
         class: 'btn btn-primario', type: 'button',
@@ -70,72 +63,6 @@ export async function montarDashboard(contenedor) {
   );
 
   suscribir(() => { montarDashboard(contenedor).catch(console.error); });
-}
-
-/* ========================================================================== *
- *  RECORDATORIOS: qué te avisan el día antes y el mismo día
- * ========================================================================== */
-
-function tarjetaRecordatorio(datos, repintar) {
-  const r = resumir(datos);
-  const faltaPermiso = faltaPedirPermiso();
-  if (!r.hayAlgo && !faltaPermiso) return null;
-
-  const hora = `${String(HORA_AVISO).padStart(2, '0')}:${String(MINUTO_AVISO).padStart(2, '0')}`;
-
-  const linea = (etiqueta, grupo, atraso) => h('div',
-    { class: `recordatorio-linea${atraso ? ' atraso' : ''}` },
-    h('span', { class: 'etq' }, etiqueta),
-    h('span', {}, `${grupo.cantidad} cuota(s)`),
-    h('b', {}, formatearSoles(grupo.monto)));
-
-  const lineas = [];
-  if (r.grupo.vencidas.cantidad) lineas.push(linea('Atrasadas', r.grupo.vencidas, true));
-  if (r.grupo.hoy.cantidad) lineas.push(linea('Hoy', r.grupo.hoy, false));
-  if (r.grupo.manana.cantidad) lineas.push(linea('Mañana', r.grupo.manana, false));
-
-  const botonActivar = h('button', {
-    class: 'btn btn-primario btn-pequeno', type: 'button',
-    onclick: async (evento) => {
-      const boton = evento.currentTarget;
-      boton.disabled = true;
-      const permiso = await pedirPermiso();
-      boton.disabled = false;
-      if (permiso === 'granted') {
-        avisar('Avisos activados. Te avisaremos el día antes y el mismo día, a primera hora.', 'exito');
-        revisar();
-        repintar();
-      } else if (permiso === 'denied') {
-        avisar('Los avisos están bloqueados. Actívalos en los ajustes del navegador (icono de candado o de información junto a la dirección).', 'error');
-      } else if (permiso !== 'no-soportado') {
-        avisar('No se activaron los avisos.', 'info');
-      }
-    },
-  }, permisoConcedido() ? 'Avisos activados' : 'Activar avisos del sistema');
-
-  const pie = h('div', { class: 'recordatorio-pie' },
-    h('button', {
-      class: 'btn btn-primario btn-pequeno', type: 'button',
-      onclick: () => ir('cobrar'),
-    }, h('span', { class: 'con-icono' }, 'Ir a cobrar', h('span', { class: 'flecha-avance' }, '›'))),
-    faltaPermiso ? botonActivar : h('button', {
-      class: 'btn btn-claro btn-pequeno', type: 'button',
-      onclick: () => ir('ajustes'),
-    }, 'Ajustes de avisos'));
-
-  return h('div', { class: 'tarjeta tarjeta-recordatorio' },
-    h('div', { class: 'tarjeta-cabecera' },
-      h('h2', {}, h('span', { class: 'con-icono' }, icono('alerta'), 'Recordatorios de cobro')),
-      h('span', { class: 'crece' }),
-      h('span', { class: 'etiqueta' },
-        permisoConcedido() ? `Avisos a las ${hora}` : 'Avisos apagados')),
-    h('div', { class: 'tarjeta-cuerpo' },
-      lineas.length
-        ? h('div', {}, ...lineas)
-        : h('p', { class: 'recordatorio-vacio' },
-          `Activa los avisos y te recordaremos el día antes y el mismo día de cada cobro, `
-          + `a primera hora (sobre las ${hora}).`),
-      pie));
 }
 
 /* ========================================================================== *
@@ -264,9 +191,10 @@ function montanas(datos, hoyISO) {
 
   const ANCHO = 700;
   const ALTO = 76;
-  const paso = ANCHO / (dias.length - 1);
+  // Con un solo día no hay divisions: el punto va al centro.
+  const paso = dias.length > 1 ? ANCHO / (dias.length - 1) : 0;
   const puntos = dias.map((d, i) => ({
-    x: i * paso,
+    x: dias.length > 1 ? i * paso : ANCHO / 2,
     y: ALTO - (d.monto / maximo) * (ALTO - 12) - 2,
     dia: d,
     i,

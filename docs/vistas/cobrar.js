@@ -10,7 +10,7 @@
 import { api } from '../api.js';
 import { app, ir, refrescar, suscribir } from '../estado.js';
 import {
-  h, avisar, formatearSoles, botonWhatsapp, mensajeRecordatorio, mensajeSaldo, icono,
+  h, avisar, formatearSoles, botonWhatsapp, mensajeRecordatorio, mensajeSaldo, icono, pintarEn,
 } from '../ui.js';
 import { formatearFecha, diasEntre, hoyISO } from '../compartido/calculo.js';
 
@@ -115,7 +115,8 @@ async function pintar(contenedor) {
                 }, 'Préstamos')))))))))
     : null;
 
-  contenedor.replaceChildren(
+  pintarEn(
+    contenedor,
     h('div', { class: 'acciones' },
       h('button', {
         class: 'btn btn-claro', type: 'button',

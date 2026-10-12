@@ -9,7 +9,7 @@ import { api } from './api.js';
 import { app, ir, limpiarSuscriptores, refrescar, suscribir } from './estado.js';
 import { avisar, h, icono } from './ui.js';
 import {
-  arrancarRecordatorios, revisar as revisarRecordatorios,
+  arrancarRecordatorios, revisar as revisarRecordatorios, cantidadBandeja,
 } from './js/recordatorios.js';
 
 import { montarDashboard } from './vistas/dashboard.js';
@@ -20,6 +20,7 @@ import { montarClientes } from './vistas/clientes.js';
 import { montarCliente } from './vistas/cliente.js';
 import { montarCapital } from './vistas/capital.js';
 import { montarAjustes } from './vistas/ajustes.js';
+import { montarBandeja } from './vistas/bandeja.js';
 
 /* ========================================================================== *
  *  MAPA DE PANTALLAS
@@ -34,12 +35,13 @@ const RUTAS = [
   { patron: ['clientes'], vista: montarClientes, titulo: 'Clientes', subtitulo: 'Todas las personas que te deben' },
   { patron: ['clientes', '#id'], vista: montarCliente, titulo: 'Historial del cliente', subtitulo: '' },
   { patron: ['capital'], vista: montarCapital, titulo: 'Capital', subtitulo: 'Cuánto tienes y cuánto falta volver' },
+  { patron: ['bandeja'], vista: montarBandeja, titulo: 'Avisos', subtitulo: 'Bandeja de recordatorios de cobro' },
   { patron: ['ajustes'], vista: montarAjustes, titulo: 'Ajustes', subtitulo: 'Respaldo, exportación y preferencias' },
 ];
 
 const SECCION_POR_VISTA = {
   dashboard: 'dashboard', cobrar: 'cobrar', prestamos: 'prestamos',
-  clientes: 'clientes', capital: 'capital', ajustes: 'ajustes',
+  clientes: 'clientes', capital: 'capital', bandeja: 'bandeja', ajustes: 'ajustes',
 };
 
 /* ========================================================================== *
@@ -296,6 +298,16 @@ export async function actualizarMiniResumen() {
   } catch { /* si falla, se deja el resumen anterior */ }
 }
 
+/** Bolita de la campana: cuántos avisos de la bandeja siguen sin leer. */
+function actualizarBolitaBandeja() {
+  const bolita = document.getElementById('bolitaBandeja');
+  if (!bolita) return;
+  let n = 0;
+  try { n = cantidadBandeja(); } catch { n = 0; }
+  bolita.textContent = n > 9 ? '9+' : String(n);
+  bolita.hidden = n === 0;
+}
+
 function pintarCabeceraFija() {
   document.getElementById('nombreNegocio').textContent = app.ajustes.nombreNegocio || 'Mi negocio';
 
@@ -303,6 +315,10 @@ function pintarCabeceraFija() {
   document.getElementById('etiquetaFecha').textContent = hoy.toLocaleDateString('es-PE', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   });
+
+  // Bolita de la campana de avisos (bandeja)
+  window.addEventListener('bandeja-cambio', actualizarBolitaBandeja);
+  actualizarBolitaBandeja();
 
   // Botones globales
   document.addEventListener('click', async (evento) => {

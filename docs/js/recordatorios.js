@@ -6,14 +6,18 @@
  *  Qué hace:
  *    1. Pide permiso para enviar notificaciones al sistema.
  *    2. Cada vez que se abre la app (o vuelve a primer plano) mira qué cuotas
- *       tocan cobrar HOY y MAÑANA, y lanza una notificación del sistema.
- *    3. Si la app está abierta a primera hora, programa el aviso para las
+ *       tocan cobrar HOY y MAÑANA, y anota el aviso en la bandeja de la app
+ *       (localStorage, 1 entrada por día) sin importar los permisos.
+ *    3. Si hay permiso, lanza la notificación del sistema: primero por el
+ *       service worker y, si no se puede, con la notificación de la página.
+ *    4. Si la app está abierta a primera hora, programa el aviso para las
  *       07:30 de la mañana siguiente.
- *    4. Deja la lista de cobros pendientes guardada en la caché para que el
+ *    5. Deja la lista de cobros pendientes guardada en la caché para que el
  *       service worker pueda avisar también sin tener la app abierta
  *       (sincronización periódica de fondo, cuando el navegador lo permite).
  *
- *  Los avisos se anotan por día en localStorage para que no salgan dos veces.
+ *  Los avisos del sistema salen una vez por día; la bandeja guarda 1 entrada
+ *  por día (como mucho 30) hasta que la vacíes.
  * ============================================================================
  */
 
@@ -26,6 +30,7 @@ export const MINUTO_AVISO = 30;
 
 const CLAVE_ENVIADOS = 'prestamos.recordatorios.enviados';
 const CLAVE_MOSTRADO_PERMISO = 'prestamos.recordatorios.pedido';
+const CLAVE_BANDEJA = 'prestamos.bandeja';
 const CACHE_AVISO = 'prestamos-recordatorios';
 
 const dinero = (valor) => `S/ ${(Number(valor) || 0).toLocaleString('es-PE', {
@@ -126,7 +131,63 @@ export function resumir(datos) {
 }
 
 /* ========================================================================== *
- *  3. AVISAR (una vez por día)
+ *  3. BANDEJA DE AVISOS (localStorage, 1 entrada por día)
+ * ========================================================================== */
+
+function avisarBandejaCambio() {
+  try { window.dispatchEvent(new Event('bandeja-cambio')); } catch { /* sin window */ }
+}
+
+/** Anota el aviso del día en la bandeja de la app, ANTES de mirar permisos. */
+export function anotarAviso(resumen) {
+  const entrada = {
+    fecha: resumen.hoy,
+    titulo: resumen.titulo,
+    cuerpo: resumen.cuerpo,
+    lineas: resumen.lineas || [],
+    creada: new Date().toISOString(),
+    leida: false,
+  };
+  try {
+    const previa = JSON.parse(localStorage.getItem(CLAVE_BANDEJA) || '[]');
+    const lista = (Array.isArray(previa) ? previa : []).filter((e) => e && e.fecha !== resumen.hoy);
+    lista.unshift(entrada);
+    localStorage.setItem(CLAVE_BANDEJA, JSON.stringify(lista.slice(0, 30)));
+  } catch { /* sin store */ }
+  avisarBandejaCambio();
+  return entrada;
+}
+
+/** Lista de avisos de la bandeja, del más reciente al más antiguo. */
+export function leerBandeja() {
+  try {
+    const lista = JSON.parse(localStorage.getItem(CLAVE_BANDEJA) || '[]');
+    return Array.isArray(lista) ? lista.filter((e) => e && e.fecha) : [];
+  } catch { return []; }
+}
+
+/** Cuántos avisos de la bandeja siguen sin leerse (la bolita de la campana). */
+export function cantidadBandeja() {
+  return leerBandeja().filter((e) => !e.leida).length;
+}
+
+/** Marca todos los avisos de la bandeja como leídos. */
+export function marcarBandejaLeida() {
+  try {
+    const lista = leerBandeja().map((e) => ({ ...e, leida: true }));
+    localStorage.setItem(CLAVE_BANDEJA, JSON.stringify(lista));
+  } catch { /* sin store */ }
+  avisarBandejaCambio();
+}
+
+/** Vacía la bandeja por completo. */
+export function limpiarBandeja() {
+  try { localStorage.removeItem(CLAVE_BANDEJA); } catch { /* sin store */ }
+  avisarBandejaCambio();
+}
+
+/* ========================================================================== *
+ *  4. AVISAR (una vez por día)
  * ========================================================================== */
 
 function yaAvisado(fecha) {
@@ -145,12 +206,46 @@ function marcarAvisado(fecha) {
 }
 
 /**
+ * Lanza una notificación del sistema.
+ * Primero intenta por el service worker (aparece en la bandeja del sistema
+ * aunque la app esté cerrada); si no se puede, usa la notificación de la página.
+ */
+export async function notificar(titulo, opciones = {}) {
+  const opcionesSistema = {
+    body: opciones.cuerpo || '',
+    tag: opciones.tag || `recordatorio-${hoyISO()}`,
+    icon: 'iconos/icono-192.png',
+    badge: 'iconos/icono-192.png',
+    silent: true,           // el pitido lo ponemos nosotros, suave
+    renotify: false,
+    data: { ruta: opciones.ruta || '#/cobrar' },
+  };
+
+  try {
+    if ('serviceWorker' in navigator) {
+      const registro = await navigator.serviceWorker.ready;
+      await registro.showNotification(titulo, opcionesSistema);
+      return true;
+    }
+  } catch { /* sin SW o sin permiso: probamos con la notificación de la página */ }
+
+  try {
+    const aviso = new Notification(titulo, opcionesSistema);
+    aviso.onclick = () => {
+      window.focus();
+      location.hash = opcionesSistema.data.ruta;
+      aviso.close();
+    };
+    return true;
+  } catch { return false; }
+}
+
+/**
  * Comprueba y avisa. Es la función que llama todo el mundo.
- * @param {object} [op]  { silencioso } no toca el permiso ni pita
+ * @param {object} [op]  { silencioso } no pita
  */
 export async function revisar(op = {}) {
   if (!avisosDeRecordatorioActivados()) return null;
-  if (!hayNotificaciones() || Notification.permission !== 'granted') return null;
 
   let datos;
   try { datos = await api.dashboard(); } catch { return null; }
@@ -158,28 +253,27 @@ export async function revisar(op = {}) {
   const resumen = resumir(datos);
   if (!resumen.hayAlgo) return null;
 
-  // Guardar para que el service worker pueda avisar si tú no abres la app
+  // 1) Siempre va a la bandeja de la app (1 entrada por día), sin importar
+  //    permisos ni avisos previos: así nunca se pierde el recordatorio.
+  anotarAviso(resumen);
+
+  // 2) Guardar para que el service worker pueda avisar si tú no abres la app
   guardarParaElServiceWorker(resumen);
 
-  const clave = `${resumen.hoy}|${resumen.manana}`;
-  if (yaAvisado(clave)) return null;
+  // 3) Aviso del sistema: solo con permiso y una sola vez por día
+  if (!hayNotificaciones() || Notification.permission !== 'granted') return resumen;
 
+  const clave = `${resumen.hoy}|${resumen.manana}`;
+  if (yaAvisado(clave)) return resumen;
   marcarAvisado(clave);
 
-  try {
-    const aviso = new Notification(resumen.titulo, {
-      body: resumen.cuerpo,
-      tag: `recordatorio-${resumen.hoy}`,
-      icon: 'iconos/icono-192.png',
-      badge: 'iconos/icono-192.png',
-      silent: true,           // el pitido lo ponemos nosotros, suave
-      renotify: false,
-      data: { ruta: '#/cobrar' },
-    });
-    aviso.onclick = () => { window.focus(); location.hash = '#/cobrar'; aviso.close(); };
-    if (!op.silencioso) sonarAviso();
-    return resumen;
-  } catch { return null; }
+  await notificar(resumen.titulo, {
+    cuerpo: resumen.cuerpo,
+    tag: `recordatorio-${resumen.hoy}`,
+    ruta: '#/cobrar',
+  });
+  if (!op.silencioso) sonarAviso();
+  return resumen;
 }
 
 /** Versión solo para el panel del dashboard: no pide permiso, no pita. */

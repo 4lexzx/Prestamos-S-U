@@ -63,8 +63,9 @@ día**, a primera hora (**07:30**).
 - **Aviso del sistema**: aparece en la barra de notificaciones del teléfono,
   con lo que cobras, cuánto hay atrasado y qué toca mañana.
 - Si la app está abierta, además suena **un pitido suave**.
-- En el **Panel** hay una tarjeta con el resumen (Atrasadas / Hoy / Mañana) y
-  un botón **Ir a cobrar**.
+- Cada aviso queda anotado en la **bandeja de la app** (campana de la esquina
+  superior, con una bolita roja cuando hay avisos nuevos): 1 entrada por día,
+  aunque no tengas permiso de notificaciones. Dentro puedes verlos y vaciarla.
 - En **Ajustes → Sonidos y avisos** se activan o se apagan, y ahí mismo se
   concede el permiso del navegador (haz falta una sola vez).
 
@@ -156,9 +157,9 @@ En **Ajustes** tienes:
 | `js/negocio.js` + `js/rutas.js` | La lógica y las rutas del servidor, ejecutándose en el navegador |
 | `js/migra.js` | Importar `.db` / respaldos JSON |
 | `js/sonidos.js` | Pitidos de cobro y de préstamo (sonido generado en el navegador) |
-| `js/recordatorios.js` | Avisos de cobro: resumen, permiso, programación y aviso del sistema |
+| `js/recordatorios.js` | Avisos de cobro: resumen, permiso, bandeja (localStorage), notificación del sistema y programación |
 | `api.js` | Fachada: mismas llamadas que el servidor, resueltas en local |
-| `sw.js` | Service worker: precaché de 33 archivos, modo sin conexión y avisos en segundo plano |
+| `sw.js` | Service worker: precaché de 34 archivos, modo sin conexión y avisos en segundo plano |
 | `manifest.webmanifest` + `iconos/` | Instalación como app e iconos |
 
 La lógica de negocio está **copiada literalmente** desde el servidor

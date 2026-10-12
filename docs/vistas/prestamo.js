@@ -12,7 +12,7 @@ import { api } from '../api.js';
 import { app, ir, refrescar, suscribir } from '../estado.js';
 import {
   h, avisar, confirmar, abrirModal, formatearSoles, barraDesglose,
-  barraProgreso, botonWhatsapp, mensajeRecordatorio, iniciales, icono,
+  barraProgreso, botonWhatsapp, mensajeRecordatorio, iniciales, icono, pintarEn,
 } from '../ui.js';
 import {
   formatearFecha, hoyISO, NOMBRE_FRECUENCIA, desglosarTasa,
@@ -290,7 +290,8 @@ async function pintar(contenedor, prestamo) {
               }, 'Borrar'))))))))
     : null;
 
-  contenedor.replaceChildren(
+  pintarEn(
+    contenedor,
     acciones, ficha, progreso, cuotas, tablaDetalle, zonaAbonos,
     h('div', { style: 'height:30px' }),
   );

@@ -814,9 +814,16 @@ function construirResumenCapital() {
   const capitalTotal = aSoles(movimientos.reduce((t, m) => t + aCentimos(m.monto), 0));
   const prestamos = listarPrestamos('todos');
   const activos = prestamos.filter((p) => p.estado === 'activo');
+  const terminados = prestamos.filter((p) => p.estado === 'terminado');
 
-  const prestadoC = activos.reduce((t, p) => t + aCentimos(p.monto), 0);
-  const recuperadoC = activos.reduce((t, p) => t + aCentimos(p.resumen.capitalRecuperado), 0);
+  // En la calle queda SOLO el capital que aún no te devuelven: en cuanto
+  // cobras una cuota, ese capital vuelve a estar disponible para prestar.
+  const prestadoC = activos.reduce((t, p) => t + aCentimos(p.resumen.capitalPendiente), 0);
+  // Lo prestado en total (Σ monto de los activos): lo usa la tabla "por cliente".
+  const prestadoOriginalC = activos.reduce((t, p) => t + aCentimos(p.monto), 0);
+  // Recuperado: lo cobrado de los activos + el capital completo de los terminados.
+  const recuperadoC = [...activos, ...terminados]
+    .reduce((t, p) => t + aCentimos(p.resumen.capitalRecuperado), 0);
   const capitalDisponibleC = Math.max(0, aCentimos(capitalTotal) - prestadoC);
 
   // Desglose por cliente: solo el capital que le falta devolver
@@ -850,6 +857,7 @@ function construirResumenCapital() {
     capitalTotal,
     movimientos,
     capitalPrestado: aSoles(prestadoC),
+    capitalPrestadoOriginal: aSoles(prestadoOriginalC),
     capitalRecuperado: aSoles(recuperadoC),
     capitalDisponible: aSoles(capitalDisponibleC),
     interesGanado: aSoles(activos.reduce((t, p) => t + aCentimos(p.resumen.interesCobrado), 0)),

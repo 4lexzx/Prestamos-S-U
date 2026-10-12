@@ -12,7 +12,7 @@
 import { api } from '../api.js';
 import { refrescar, suscribir } from '../estado.js';
 import {
-  h, vacio, avisar, confirmar, abrirModal, iniciales, formatearSoles, barraDesglose,
+  h, vacio, avisar, confirmar, abrirModal, iniciales, formatearSoles, barraDesglose, pintarEn,
 } from '../ui.js';
 import { formatearFecha } from '../compartido/calculo.js';
 
@@ -30,7 +30,14 @@ async function pintar(contenedor) {
     h('button', {
       class: 'btn btn-primario', type: 'button',
       onclick: () => abrirFormularioCapital(contenedor),
-    }, d.movimientos.length ? '+ Agregar más capital' : '+ Registrar capital inicial'));
+    }, d.movimientos.length ? '+ Agregar más capital' : '+ Registrar capital inicial'),
+
+    d.capitalTotal > 0
+      ? h('button', {
+        class: 'btn btn-claro', type: 'button',
+        onclick: () => abrirFormularioRetiro(contenedor, d.capitalTotal),
+      }, 'Retirar capital')
+      : null);
 
   /* ---------------- Aviso si no se ha registrado capital ---------------- */
 
@@ -57,7 +64,7 @@ async function pintar(contenedor) {
         h('div', { class: 'dato ambar' },
           h('div', { class: 'titulo' }, 'Capital prestado ahora'),
           h('div', { class: 'monto' }, formatearSoles(d.capitalPrestado)),
-          h('div', { class: 'nota' }, 'El que está en la calle, no cobrado')),
+          h('div', { class: 'nota' }, 'El que aún está en la calle, sin cobrar')),
 
         h('div', { class: 'dato verde' },
           h('div', { class: 'titulo' }, 'Capital recuperado'),
@@ -67,7 +74,7 @@ async function pintar(contenedor) {
         h('div', { class: 'dato verde' },
           h('div', { class: 'titulo' }, 'Disponible para prestar'),
           h('div', { class: 'monto' }, formatearSoles(d.capitalDisponible)),
-          h('div', { class: 'nota' }, 'Total − prestado ahora')),
+          h('div', { class: 'nota' }, 'Total − lo que aún está prestado')),
 
         h('div', { class: 'dato ambar' },
           h('div', { class: 'titulo' }, 'Interés ganado (cobrado)'),
@@ -90,8 +97,9 @@ async function pintar(contenedor) {
 
       h('div', { class: 'nota-info verde', style: 'margin-top:18px' },
         `Cómo se calcula el disponible: ${formatearSoles(d.capitalTotal)} (tu capital total) `
-        + `− ${formatearSoles(d.capitalPrestado)} (lo que está prestado ahora) `
-        + `= ${formatearSoles(d.capitalDisponible)}`)));
+        + `− ${formatearSoles(d.capitalPrestado)} (lo que aún está prestado sin cobrar) `
+        + `= ${formatearSoles(d.capitalDisponible)}. En cuanto cobras una cuota, `
+        + 'su capital se libera y ya puedes volver a prestarlo.')));
 
   /* ---------------- Movimientos de capital ---------------- */
 
@@ -112,9 +120,10 @@ async function pintar(contenedor) {
           h('tbody', {}, ...d.movimientos.map((m) => h('tr', {},
             h('td', { datosEtiqueta: 'Fecha' }, formatearFecha(m.fecha)),
             h('td', { datosEtiqueta: 'Tipo' },
-              h('span', { class: `etiqueta ${m.tipo === 'inicial' ? 'azul' : 'verde'}` },
-                m.tipo === 'inicial' ? 'Capital inicial' : 'Capital agregado')),
-            h('td', { datosEtiqueta: 'Monto', class: 'num negrita' }, formatearSoles(m.monto)),
+              h('span', { class: `etiqueta ${m.tipo === 'inicial' ? 'azul' : m.tipo === 'retiro' ? 'roja' : 'verde'}` },
+                m.tipo === 'inicial' ? 'Capital inicial' : m.tipo === 'retiro' ? 'Retiro' : 'Capital agregado')),
+            h('td', { datosEtiqueta: 'Monto', class: 'num negrita',
+              style: m.tipo === 'retiro' ? 'color:var(--rojo)' : '' }, formatearSoles(m.monto)),
             h('td', { datosEtiqueta: 'Nota' }, m.nota || '—'),
             h('td', { datosEtiqueta: 'Acciones' },
               h('button', {
@@ -179,7 +188,7 @@ async function pintar(contenedor) {
                 }, 'Abrir')))))),
           h('tfoot', {}, h('tr', {},
             h('td', { class: 'negrita' }, 'TOTAL'),
-            h('td', { class: 'num negrita' }, formatearSoles(d.capitalPrestado)),
+            h('td', { class: 'num negrita' }, formatearSoles(d.capitalPrestadoOriginal)),
             h('td', { class: 'num negrita' }, formatearSoles(d.capitalRecuperado)),
             h('td', { class: 'num negrita' }, formatearSoles(d.porCliente.reduce((s, c) => s + c.capitalPendiente, 0))),
             h('td', { class: 'num negrita' }, formatearSoles(d.porCobrarTotal)),
@@ -203,7 +212,8 @@ async function pintar(contenedor) {
         barraDesglose(d.interesPorCobrar, d.capitalDisponible > 0 ? d.capitalDisponible : 1)))
     : null;
 
-  contenedor.replaceChildren(
+  pintarEn(
+    contenedor,
     acciones, avisoSinCapital, resumen, porCliente, movimientos, ejemplo,
     h('div', { style: 'height:30px' }),
   );
@@ -242,6 +252,53 @@ function abrirFormularioCapital(contenedor) {
         + 'Solo sirve para saber cuánto dinero tienes disponible para prestar.'),
       h('div', { class: 'campo' },
         h('label', {}, 'Monto (S/)', h('span', { class: 'obligatorio' }, ' *')), monto),
+      h('div', { class: 'fila-campos' },
+        h('div', { class: 'campo' }, h('label', {}, 'Fecha'), fecha),
+        h('div', { class: 'campo' }, h('label', {}, 'Nota'), nota)),
+      zonaError),
+    pie: [
+      h('button', { class: 'btn btn-claro', type: 'button', onclick: () => ventana.cerrar() }, 'Cancelar'),
+      boton,
+    ],
+  });
+}
+
+/* ========================================================================== *
+ *  Formulario para retirar capital
+ * ========================================================================== */
+
+function abrirFormularioRetiro(contenedor, capitalTotal) {
+  const monto = h('input', { type: 'text', inputmode: 'decimal', class: 'monto', placeholder: '100.00' });
+  const fecha = h('input', { type: 'date', value: new Date().toISOString().slice(0, 10) });
+  const nota = h('input', { type: 'text', placeholder: 'Ej. me llevé efectivo a casa' });
+  const zonaError = h('div', {});
+  const boton = h('button', { class: 'btn btn-peligro', type: 'button' }, 'Retirar');
+
+  boton.addEventListener('click', async () => {
+    boton.disabled = true;
+    zonaError.replaceChildren();
+    try {
+      await api.agregarCapital({
+        tipo: 'retiro', monto: monto.value, fecha: fecha.value, nota: nota.value.trim(),
+      });
+      ventana.cerrar();
+      avisar('Capital retirado.', 'exito');
+      refrescar();
+    } catch (error) {
+      zonaError.replaceChildren(h('div', { class: 'nota-info roja' }, error.message));
+      boton.disabled = false;
+    }
+  });
+
+  const ventana = abrirModal({
+    titulo: 'Retirar capital',
+    contenido: h('div', {},
+      h('div', { class: 'nota-info' },
+        'El retiro se registra con monto negativo, así el total de capital '
+        + 'y el CSV siguen cuadrando. No puedes retirar más de tu capital total.'),
+      h('div', { class: 'campo' },
+        h('label', {}, 'Monto a retirar (S/)', h('span', { class: 'obligatorio' }, ' *')), monto,
+        h('div', { class: 'ayuda' }, `Capital total ahora: ${formatearSoles(capitalTotal)}`)),
       h('div', { class: 'fila-campos' },
         h('div', { class: 'campo' }, h('label', {}, 'Fecha'), fecha),
         h('div', { class: 'campo' }, h('label', {}, 'Nota'), nota)),
