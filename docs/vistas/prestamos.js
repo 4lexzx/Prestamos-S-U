@@ -173,13 +173,17 @@ export async function montarPrestamos(contenedor, { diaSeleccionada = null } = {
 
       const abrirHistorial = () => ir(`clientes/${cliente.id}`);
 
-      return h('tr', { style: 'cursor:pointer', onclick: abrirHistorial },
+      return h('tr', {
+        dataset: { accion: 'desplegar' }, role: 'button', tabindex: '0',
+        'aria-expanded': 'false',
+      },
         h('td', { class: 'bloque' },
           h('div', { class: 'celda-cliente' },
             h('div', { class: 'avatar' }, iniciales(cliente.nombre)),
             h('div', {},
               h('strong', {}, cliente.nombre),
-              h('small', {}, cliente.telefono || 'Sin teléfono')))),
+              h('small', {}, cliente.telefono || 'Sin teléfono')),
+            h('span', { class: 'chevron', 'aria-hidden': 'true' }))),
         h('td', { datosEtiqueta: 'Activos' },
           activos.length
             ? h('span', { class: 'etiqueta verde' }, String(activos.length))
@@ -211,7 +215,7 @@ export async function montarPrestamos(contenedor, { diaSeleccionada = null } = {
           h('span', { class: 'crece' }),
           h('span', { class: 'etiqueta azul' }, `${idsAMostrar.length}`)),
         h('div', { class: 'tabla-envoltura' },
-          h('table', { class: 'tabla plegable' },
+          h('table', { class: 'tabla plegable desplegable' },
             h('thead', {}, h('tr', {},
               h('th', {}, 'Cliente'),
               h('th', {}, 'Activos'),

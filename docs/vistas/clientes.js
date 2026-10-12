@@ -59,13 +59,17 @@ export async function montarClientes(contenedor) {
 
     const filas = estado.clientes.map((cliente) => {
       const info = porCliente.get(cliente.id) || { activos: 0, total: 0, pendiente: 0 };
-      return h('tr', {},
+      return h('tr', {
+        dataset: { accion: 'desplegar' }, role: 'button', tabindex: '0',
+        'aria-expanded': 'false',
+      },
         h('td', { class: 'bloque' },
           h('div', { class: 'celda-cliente' },
             h('div', { class: 'avatar' }, iniciales(cliente.nombre)),
             h('div', {},
               h('strong', {}, cliente.nombre),
-              h('small', {}, [cliente.telefono, cliente.dni].filter(Boolean).join(' · ') || 'Sin datos de contacto')))),
+              h('small', {}, [cliente.telefono, cliente.dni].filter(Boolean).join(' · ') || 'Sin datos de contacto')),
+            h('span', { class: 'chevron', 'aria-hidden': 'true' }))),
         h('td', { datosEtiqueta: 'Ubicación' }, cliente.ubicacion || '—'),
         h('td', { datosEtiqueta: 'Préstamos' },
           info.activos
@@ -107,7 +111,7 @@ export async function montarClientes(contenedor) {
         h('span', { class: 'crece' }),
         h('span', { class: 'etiqueta azul' }, `${estado.clientes.length}`)),
       h('div', { class: 'tabla-envoltura' },
-        h('table', { class: 'tabla plegable' },
+        h('table', { class: 'tabla plegable desplegable' },
           h('thead', {}, h('tr', {},
             h('th', {}, 'Cliente'),
             h('th', {}, 'Ubicación'),

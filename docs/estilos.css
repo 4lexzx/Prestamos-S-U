@@ -363,6 +363,8 @@ table.tabla .negrita { font-weight: 650; }
 .celda-cliente { display: flex; align-items: center; gap: 11px; }
 .celda-cliente strong { display: block; font-size: 14px; }
 .celda-cliente small { color: var(--gris-500); font-size: 12.5px; }
+/* El chevron de las filas desplegables es solo cosa del celular */
+.celda-cliente .chevron { display: none; }
 
 /* ==========================================================================
    BOTONES DE CUOTA
@@ -692,6 +694,32 @@ table.tabla .negrita { font-weight: 650; }
   .celda-cliente .avatar { width: 28px; height: 28px; font-size: 11px; flex: 0 0 28px; }
   .celda-cliente small { display: none; }
   .celda-cliente strong { font-size: 14.5px; }
+
+  /* ------------------------------------------------------------------
+     FILAS DESPLEGABLES
+     Listas largas (Clientes, Préstamos) que plegadas solo enseñan el
+     nombre y el importe. Un toque en la fila despliega el resto.
+     ------------------------------------------------------------------ */
+  table.tabla.desplegable .celda-cliente .chevron {
+    display: block; flex: 0 0 auto; margin-left: auto;
+    width: 9px; height: 9px; margin-right: 2px;
+    border-right: 2px solid var(--gris-400);
+    border-bottom: 2px solid var(--gris-400);
+    transform: rotate(-45deg); transition: transform .15s;
+  }
+  table.tabla.desplegable tr.abierta .chevron { transform: rotate(45deg); }
+
+  table.tabla.desplegable tbody tr { cursor: pointer; }
+  table.tabla.desplegable tbody tr:not(.abierta) { min-height: 46px; }
+  table.tabla.desplegable tbody tr:not(.abierta) td:not(:first-child):not(.num.negrita) {
+    display: none;
+  }
+  /* Al estar plegada no hace falta el salto que separa las líneas */
+  table.tabla.desplegable tbody tr:not(.abierta)::before,
+  table.tabla.desplegable tbody tr:not(.abierta)::after { display: none; }
+  table.tabla.desplegable tbody td:first-child:focus-visible {
+    outline: 2px solid var(--verde); outline-offset: 3px; border-radius: 4px;
+  }
 
   /* ------------------------------------------------------------------
      BARRA DE NAVEGACIÓN INFERIOR

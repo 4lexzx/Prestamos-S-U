@@ -197,7 +197,17 @@ function pintarCabeceraFija() {
   document.addEventListener('click', async (evento) => {
     const boton = evento.target.closest('[data-accion]');
     if (!boton) return;
+    // Un botón o enlace de dentro de una fila manda sobre desplegar la fila
+    if (boton.tagName === 'TR' && evento.target.closest('button, a')) return;
     const accion = boton.dataset.accion;
+    if (accion === 'desplegar') {
+      const fila = boton.closest('tr');
+      if (!fila) return;
+      const abierta = fila.classList.toggle('abierta');
+      for (const control of [fila, ...fila.querySelectorAll('[data-accion="desplegar"]')]) {
+        control.setAttribute('aria-expanded', String(abierta));
+      }
+    }
     if (accion === 'nuevo-prestamo') {
       const { abrirFormularioPrestamo } = await import('./modales/prestamo-form.js');
       abrirFormularioPrestamo({ alGuardar: () => { refrescar(); } });
@@ -207,6 +217,15 @@ function pintarCabeceraFija() {
       try { await pintarRuta(); await actualizarMiniResumen(); avisar('Datos actualizados.', 'info'); }
       finally { boton.disabled = false; }
     }
+  });
+
+  // Las filas desplegables se abren también con Enter o Espacio
+  document.addEventListener('keydown', (evento) => {
+    if (evento.key !== 'Enter' && evento.key !== ' ') return;
+    const control = evento.target.closest?.('[data-accion="desplegar"]');
+    if (!control || control.tagName === 'BUTTON' || control.tagName === 'A') return;
+    evento.preventDefault();
+    control.click();
   });
 
   actualizarMiniResumen();

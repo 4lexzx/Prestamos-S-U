@@ -43,6 +43,10 @@ En pantallas de celular la navegación vive **abajo, al alcance del pulgar**:
   (cuotas, capital, interés…) y los botones al pie de cada fila. Cabe el
   doble de registros en pantalla que con las tarjetas de antes, y ningún
   importe se corta.
+- En **Clientes** y **Préstamos** las filas están **plegadas**: solo se ve el
+  nombre y el saldo, y el resto (ubicación, cuotas, atraso y los botones)
+  aparece al tocar la fila. Un toque más y se vuelve a plegar. Así se pasa
+  de un cliente a otro sin tener que hacer scroll.
 
 En la computadora (pantalla ancha) el diseño es el de siempre: barra lateral
 con el menú y las tablas en su formato de columnas.
