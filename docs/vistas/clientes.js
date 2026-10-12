@@ -71,7 +71,7 @@ export async function montarClientes(contenedor) {
           info.activos
             ? h('span', { class: 'etiqueta verde' }, `${info.activos} activo(s)`)
             : h('span', { class: 'etiqueta gris' }, 'Sin deuda')),
-        h('td', { datosEtiqueta: 'Saldo a favor', class: 'num' },
+        h('td', { datosEtiqueta: 'Saldo a favor', class: 'num negrita' },
           info.pendiente ? formatearSoles(info.pendiente) : '—'),
         h('td', { datosEtiqueta: 'Acciones' },
           h('div', { style: 'display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap' },

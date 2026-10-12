@@ -38,9 +38,11 @@ En pantallas de celular la navegación vive **abajo, al alcance del pulgar**:
 - **Ajustes** está en el engranaje de la esquina superior derecha.
 - **Botón flotante verde (+)** abajo a la derecha: registra un préstamo desde
   cualquier pantalla sin tener que buscar en el menú.
-- Las tablas se convierten en **tarjetas**: el cliente va de encabezado, los
-  datos en pares etiqueta/valor y los botones al pie, todos del ancho completo
-  y con 44 px de alto para tocar sin fallar.
+- Las tablas se convierten en **filas de una sola línea de altura** en tres
+  renglones apretados: el nombre y el importe arriba, el desglose debajo
+  (cuotas, capital, interés…) y los botones al pie de cada fila. Cabe el
+  doble de registros en pantalla que con las tarjetas de antes, y ningún
+  importe se corta.
 
 En la computadora (pantalla ancha) el diseño es el de siempre: barra lateral
 con el menú y las tablas en su formato de columnas.
