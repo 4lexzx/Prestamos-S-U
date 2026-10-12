@@ -85,11 +85,15 @@ function revelar(contenedor, animar) {
   if (!observadorRevelado) {
     observadorRevelado = new IntersectionObserver((entradas) => {
       for (const entrada of entradas) {
-        if (!entrada.isIntersecting) continue;
+        // Se enseña si ya está cruzando el borde, o si ya pasó por encima
+        // (así un salto de scroll brusco no deja bloques invisibles abajo).
+        const yaLlego = entrada.isIntersecting
+          || entrada.boundingClientRect.top < window.innerHeight;
+        if (!yaLlego) continue;
         entrada.target.classList.add('revelado');
         observadorRevelado.unobserve(entrada.target);
       }
-    }, { rootMargin: '0px 0px -30px 0px', threshold: 0.04 });
+    }, { rootMargin: '0px 0px -16px 0px', threshold: 0.04 });
   }
 
   objetivos.forEach((el, i) => {
@@ -106,17 +110,31 @@ function olvidarRevelado() {
   observadorRevelado = null;
 }
 
-/* Sombra en la cabecera cuando el contenido se desliza por debajo. */
+/* ========================================================================== *
+ *  SCROLL DE LA PÁGINA: sombra en la cabecera + red de seguridad del revelado
+ * ========================================================================== */
+
 let sombraCabecera = null;
 
-function actualizarSombraCabecera() {
+function alDesplazar() {
   const sombreada = window.scrollY > 6;
-  if (sombreada === sombraCabecera) return;
-  sombraCabecera = sombreada;
-  document.querySelector('.cabecera')?.classList.toggle('desplazada', sombreada);
+  if (sombreada !== sombraCabecera) {
+    sombraCabecera = sombreada;
+    document.querySelector('.cabecera')?.classList.toggle('desplazada', sombreada);
+  }
+
+  // El observador no avisa de los bloques que se dejaron atrás en un salto de
+  // scroll, así que aquí los ponemos al día: todo lo que ya está encima del
+  // borde inferior de la pantalla se enseña.
+  if (!observadorRevelado) return;
+  for (const el of document.querySelectorAll('#vista .por-revelar:not(.revelado)')) {
+    if (el.getBoundingClientRect().top >= window.innerHeight) continue;
+    el.classList.add('revelado');
+    observadorRevelado.unobserve(el);
+  }
 }
 
-window.addEventListener('scroll', actualizarSombraCabecera, { passive: true });
+window.addEventListener('scroll', alDesplazar, { passive: true });
 
 /** Limpia la pantalla y marca el enlace del menú que está activo. */
 function pintarEsqueleto(titulo, subtitulo, claveMenu) {
